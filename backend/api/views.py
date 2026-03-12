@@ -77,61 +77,65 @@ class PostViewSet(viewsets.ModelViewSet):
     """
     queryset = Post.objects.all().order_by('-timestamp')
     serializer_class = PostSerializer
-    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        user = self.request.user
+        
+        # Determine viewable posts
+        view_levels = ['READ_ONLY', 'READ_WRITE']
+        condition = Q(public_access__in=view_levels)
+        
+        if user.is_authenticated:
+            condition |= Q(authenticated_access__in=view_levels)
+            if user.team:
+                condition |= Q(author__team=user.team, team_access__in=view_levels)
+            condition |= Q(author=user, author_access__in=view_levels)
+            
+        return Post.objects.filter(condition).distinct().order_by('-timestamp')
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
-def has_view_access(user, post):
+def get_effective_access(user, post):
     """
-    Check if a user has view access to a post.
+    Returns the maximum access level a user has to a post.
+    Access levels: 0 (NONE), 1 (READ_ONLY), 2 (READ_WRITE).
+    Enforces the hierarchy: Public < Authenticated < Team < Author.
     """
-    view_levels = ['READ_ONLY', 'READ_WRITE']
+    level_map = {
+        'NONE': 0,
+        'READ_ONLY': 1,
+        'READ_WRITE': 2
+    }
     
-    # Public access
-    if post.public_access in view_levels:
-        return True
+    # 1. Public tier
+    eff_access = level_map.get(post.public_access, 0)
     
     if user.is_authenticated:
-        # Authenticated access
-        if post.authenticated_access in view_levels:
-            return True
+        # 2. Authenticated tier
+        eff_access = max(eff_access, level_map.get(post.authenticated_access, 0))
+        
+        # 3. Team tier
+        if user.team and post.author.team == user.team:
+            eff_access = max(eff_access, level_map.get(post.team_access, 0))
             
-        # Team access
-        if user.team and post.author.team == user.team and post.team_access in view_levels:
-            return True
+        # 4. Author tier
+        if post.author == user:
+            eff_access = max(eff_access, level_map.get(post.author_access, 0))
             
-        # Author access
-        if post.author == user and post.author_access in view_levels:
-            return True
-            
-    return False
+    return eff_access
+
+def has_view_access(user, post):
+    """
+    Check if a user has view access to a post based on the effective access hierarchy.
+    """
+    return get_effective_access(user, post) >= 1
 
 def has_edit_access(user, post):
     """
-    Check if a user has edit access to a post.
-    Edit access requires the 'READ_WRITE' access level.
+    Check if a user has edit access to a post based on the effective access hierarchy.
     """
-    edit_level = 'READ_WRITE'
-    
-    # Public access
-    if post.public_access == edit_level:
-        return True
-    
-    if user.is_authenticated:
-        # Authenticated access
-        if post.authenticated_access == edit_level:
-            return True
-            
-        # Team access
-        if user.team and post.author.team == user.team and post.team_access == edit_level:
-            return True
-            
-        # Author access
-        if post.author == user and post.author_access == edit_level:
-            return True
-            
-    return False
+    return get_effective_access(user, post) >= 2
 
 @api_view(['DELETE'])
 @permission_classes([AllowAny])
@@ -320,21 +324,7 @@ def delete_post_view(request, post_id):
     except Post.DoesNotExist:
         return Response({'error': 'Post not found'}, status=status.HTTP_404_NOT_FOUND)
         
-    user = request.user
-    has_permission = False
-    
-    if post.author == user:
-        if post.author_access == Post.AccessLevel.READ_WRITE:
-            has_permission = True
-    elif user.team and post.author.team == user.team:
-        if post.team_access == Post.AccessLevel.READ_WRITE:
-            has_permission = True
-    elif post.authenticated_access == Post.AccessLevel.READ_WRITE:
-        has_permission = True
-    elif post.public_access == Post.AccessLevel.READ_WRITE:
-        has_permission = True
-        
-    if not has_permission:
+    if not has_edit_access(request.user, post):
         return Response({'error': 'You do not have permission to delete this post'}, status=status.HTTP_403_FORBIDDEN)
         
     post.delete()

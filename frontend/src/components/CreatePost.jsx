@@ -31,6 +31,47 @@ export default function CreatePost() {
   const [teamAccess, setTeamAccess] = useState('READ_WRITE');
   const [authorAccess, setAuthorAccess] = useState('READ_WRITE');
 
+  // Hierarchy enforcement: Public <= Authenticated <= Team <= Author
+  // 0: NONE, 1: READ_ONLY, 2: READ_WRITE
+  const levelValue = { NONE: 0, READ_ONLY: 1, READ_WRITE: 2 };
+  
+  const handlePublicChange = (e) => {
+    const val = e.target.value;
+    setPublicAccess(val);
+    if (levelValue[val] > levelValue[authenticatedAccess]) setAuthenticatedAccess(val);
+    if (levelValue[val] > levelValue[teamAccess]) setTeamAccess(val);
+    if (levelValue[val] > levelValue[authorAccess]) setAuthorAccess(val);
+  };
+
+  const handleAuthenticatedChange = (e) => {
+    const val = e.target.value;
+    setAuthenticatedAccess(val);
+    if (levelValue[val] > levelValue[teamAccess]) setTeamAccess(val);
+    if (levelValue[val] > levelValue[authorAccess]) setAuthorAccess(val);
+  };
+
+  const handleTeamChange = (e) => {
+    const val = e.target.value;
+    setTeamAccess(val);
+    if (levelValue[val] > levelValue[authorAccess]) setAuthorAccess(val);
+  };
+
+  const handleAuthorChange = (e) => {
+    setAuthorAccess(e.target.value);
+  };
+
+  // Helper to filter dropdown options based on minimum required level
+  const getOptions = (minLevelValue) => {
+    return Object.entries(ACCESS_LEVELS).map(([key, label]) => {
+      const isDisabled = levelValue[key] < minLevelValue;
+      return (
+        <option key={key} value={key} disabled={isDisabled}>
+          {label} {isDisabled ? '(Inherited)' : ''}
+        </option>
+      );
+    });
+  };
+
   const createPostMutation = useMutation({
     mutationFn: async (newPost) => {
       // CSRF requires exact matches, ensure trailing slash and withCredentials are correct
@@ -110,37 +151,29 @@ export default function CreatePost() {
           <div className="permissions-grid">
             <div className="input-group">
               <label>Public Access</label>
-              <select value={publicAccess} onChange={e => setPublicAccess(e.target.value)}>
-                {Object.entries(ACCESS_LEVELS).map(([key, label]) => (
-                  <option key={key} value={key}>{label}</option>
-                ))}
+              <select value={publicAccess} onChange={handlePublicChange}>
+                {getOptions(0)}
               </select>
             </div>
             
             <div className="input-group">
               <label>Authenticated Access</label>
-              <select value={authenticatedAccess} onChange={e => setAuthenticatedAccess(e.target.value)}>
-                {Object.entries(ACCESS_LEVELS).map(([key, label]) => (
-                  <option key={key} value={key}>{label}</option>
-                ))}
+              <select value={authenticatedAccess} onChange={handleAuthenticatedChange}>
+                {getOptions(levelValue[publicAccess])}
               </select>
             </div>
 
             <div className="input-group">
               <label>Team Access</label>
-              <select value={teamAccess} onChange={e => setTeamAccess(e.target.value)}>
-                {Object.entries(ACCESS_LEVELS).map(([key, label]) => (
-                  <option key={key} value={key}>{label}</option>
-                ))}
+              <select value={teamAccess} onChange={handleTeamChange}>
+                {getOptions(levelValue[authenticatedAccess])}
               </select>
             </div>
 
             <div className="input-group">
               <label>Author Access</label>
-              <select value={authorAccess} onChange={e => setAuthorAccess(e.target.value)}>
-                {Object.entries(ACCESS_LEVELS).map(([key, label]) => (
-                  <option key={key} value={key}>{label}</option>
-                ))}
+              <select value={authorAccess} onChange={handleAuthorChange}>
+                {getOptions(levelValue[teamAccess])}
               </select>
             </div>
           </div>
