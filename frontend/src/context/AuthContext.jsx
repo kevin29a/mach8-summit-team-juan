@@ -27,7 +27,9 @@ export const AuthProvider = ({ children }) => {
       await axios.post('/api/logout/');
     },
     onSuccess: () => {
+      queryClient.setQueryData(['whoami'], { isAuthenticated: false });
       queryClient.invalidateQueries({ queryKey: ['whoami'] });
+      window.location.href = '/login';
     }
   });
 
