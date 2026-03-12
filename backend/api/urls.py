@@ -7,4 +7,9 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('whoami/', views.whoami_view, name='whoami'),
+    path('likes/', views.like_list_view, name='like-list'),
+    path('comments/', views.comment_list_view, name='comment-list'),
+    path('posts/<int:post_id>/comments/', views.comment_view, name='comment-create'),
+    path('posts/<int:pk>/', views.post_detail_view, name='post-detail'),
+    path('comments/<int:pk>/', views.comment_view, name='comment-delete'),
 ]
