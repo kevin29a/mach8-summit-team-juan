@@ -6,6 +6,11 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.views.decorators.csrf import ensure_csrf_cookie
 
+from rest_framework.pagination import PageNumberPagination
+from .models import Like, Post, Comment
+from .serializers import LikeSerializer, CommentSerializer, CommentListSerializer
+from django.db.models import Q
+
 @api_view(['GET'])
 @permission_classes([AllowAny])
 @ensure_csrf_cookie
@@ -62,11 +67,6 @@ def whoami_view(request):
         return Response({'isAuthenticated': True, 'username': user.username, 'first_name': user.first_name, 'last_name': user.last_name})
     return Response({'isAuthenticated': False})
 
-<<<<<<< Updated upstream
-from rest_framework.pagination import PageNumberPagination
-from .models import Like, Post, Comment
-from .serializers import LikeSerializer, CommentSerializer, CommentListSerializer
-from django.db.models import Q
 
 def has_view_access(user, post):
     """
@@ -297,7 +297,6 @@ def comment_list_view(request):
 
     serializer = CommentListSerializer(queryset, many=True)
     return Response(serializer.data)
-=======
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
 def delete_post_view(request, post_id):
@@ -326,4 +325,3 @@ def delete_post_view(request, post_id):
         
     post.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
->>>>>>> Stashed changes
