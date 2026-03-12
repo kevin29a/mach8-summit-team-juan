@@ -34,7 +34,7 @@ export default function Register() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['whoami'] });
-      navigate('/');
+      navigate('/login');
     }
   });
 

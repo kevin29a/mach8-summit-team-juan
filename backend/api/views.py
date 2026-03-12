@@ -31,7 +31,6 @@ def register_view(request):
         user = User.objects.create_user(username=username, email=username, password=password)
         user.team = default_team
         user.save()
-        login(request, user)
         return Response({'message': 'Registration successful', 'username': user.username}, status=status.HTTP_201_CREATED)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
