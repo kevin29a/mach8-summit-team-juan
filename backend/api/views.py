@@ -3,7 +3,7 @@ User = get_user_model()
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, viewsets
 from django.views.decorators.csrf import ensure_csrf_cookie
 
 @api_view(['GET'])
@@ -62,3 +62,18 @@ def whoami_view(request):
     if user.is_authenticated:
         return Response({'isAuthenticated': True, 'username': user.username, 'first_name': user.first_name, 'last_name': user.last_name})
     return Response({'isAuthenticated': False})
+
+from .models import Post
+from .serializers import PostSerializer
+
+class PostViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint that allows posts to be viewed or edited.
+    Automatically assigns the author on create.
+    """
+    queryset = Post.objects.all().order_by('-timestamp')
+    serializer_class = PostSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)

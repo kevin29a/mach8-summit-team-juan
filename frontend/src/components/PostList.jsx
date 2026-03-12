@@ -1,5 +1,6 @@
 import PostCard from './PostCard';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const mockPosts = [
   {
@@ -26,6 +27,7 @@ const mockPosts = [
 
 export default function PostList() {
   const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <div className="post-list">
@@ -42,7 +44,11 @@ export default function PostList() {
       ))}
       
       {isAuthenticated && (
-        <button className="fab" title="Create New Post">
+        <button 
+          className="fab" 
+          title="Create New Post"
+          onClick={() => navigate('/create-post')}
+        >
           +
         </button>
       )}
