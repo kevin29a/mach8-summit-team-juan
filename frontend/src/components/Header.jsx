@@ -20,7 +20,7 @@ export default function Header() {
           {isAuthenticated ? (
             <div className="user-greeting">
               Welcome, {user?.first_name ? `${user.first_name} ${user?.last_name || ''}`.trim() : user?.username}
-              <button onClick={logout} className="logout-link">Logout</button>
+              <button onClick={(e) => { e.preventDefault(); logout(); }} type="button" className="logout-link">Logout</button>
             </div>
           ) : (
             <div className="auth-links">

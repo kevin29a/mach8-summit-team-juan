@@ -63,6 +63,9 @@ export default function Login() {
         <button type="submit" disabled={loginMutation.isPending} style={{ background: '#3b82f6', color: '#fff', fontSize: '1.1rem', padding: '12px', border: '2px solid #000', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', marginTop: '10px' }}>
           {loginMutation.isPending ? 'Authenticating...' : 'Sign In'}
         </button>
+        <p style={{ marginTop: '1rem', textAlign: 'center' }}>
+          Don't have an account? <span style={{ color: '#007bff', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => navigate('/register')}>Sign Up</span>
+        </p>
       </form>
     </div>
   );
