@@ -70,6 +70,19 @@ def whoami_view(request):
 from .models import Post
 from .serializers import PostSerializer
 
+class PostPagination(PageNumberPagination):
+    page_size = 10
+    
+    def get_paginated_response(self, data):
+        return Response({
+            'current_page': self.page.number,
+            'total_pages': self.page.paginator.num_pages,
+            'total_count': self.page.paginator.count,
+            'next': self.get_next_link(),
+            'previous': self.get_previous_link(),
+            'results': data
+        })
+
 class PostViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows posts to be viewed or edited.
@@ -77,6 +90,7 @@ class PostViewSet(viewsets.ModelViewSet):
     """
     queryset = Post.objects.all().order_by('-timestamp')
     serializer_class = PostSerializer
+    pagination_class = PostPagination
     
     def get_queryset(self):
         user = self.request.user
