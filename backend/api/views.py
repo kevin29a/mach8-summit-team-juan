@@ -20,7 +20,7 @@ def login_view(request):
     
     if user is not None:
         login(request, user)
-        return Response({'message': 'Login successful', 'username': user.username})
+        return Response({'message': 'Login successful', 'username': user.username, 'first_name': user.first_name, 'last_name': user.last_name})
     else:
         return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
@@ -35,5 +35,5 @@ def logout_view(request):
 def whoami_view(request):
     user = request.user
     if user.is_authenticated:
-        return Response({'isAuthenticated': True, 'username': user.username})
+        return Response({'isAuthenticated': True, 'username': user.username, 'first_name': user.first_name, 'last_name': user.last_name})
     return Response({'isAuthenticated': False})
