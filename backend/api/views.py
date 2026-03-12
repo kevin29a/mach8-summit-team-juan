@@ -25,7 +25,12 @@ def register_view(request):
         return Response({'error': 'Username already exists'}, status=status.HTTP_400_BAD_REQUEST)
         
     try:
+        from .models import Team
+        default_team, _ = Team.objects.get_or_create(name='default_team')
+        
         user = User.objects.create_user(username=username, email=username, password=password)
+        user.team = default_team
+        user.save()
         login(request, user)
         return Response({'message': 'Registration successful', 'username': user.username}, status=status.HTTP_201_CREATED)
     except Exception as e:
