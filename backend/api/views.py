@@ -62,6 +62,7 @@ def whoami_view(request):
         return Response({'isAuthenticated': True, 'username': user.username, 'first_name': user.first_name, 'last_name': user.last_name})
     return Response({'isAuthenticated': False})
 
+<<<<<<< Updated upstream
 from rest_framework.pagination import PageNumberPagination
 from .models import Like, Post, Comment
 from .serializers import LikeSerializer, CommentSerializer, CommentListSerializer
@@ -296,3 +297,33 @@ def comment_list_view(request):
 
     serializer = CommentListSerializer(queryset, many=True)
     return Response(serializer.data)
+=======
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_post_view(request, post_id):
+    from .models import Post
+    try:
+        post = Post.objects.get(id=post_id)
+    except Post.DoesNotExist:
+        return Response({'error': 'Post not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+    user = request.user
+    has_permission = False
+    
+    if post.author == user:
+        if post.author_access == Post.AccessLevel.READ_WRITE:
+            has_permission = True
+    elif user.team and post.author.team == user.team:
+        if post.team_access == Post.AccessLevel.READ_WRITE:
+            has_permission = True
+    elif post.authenticated_access == Post.AccessLevel.READ_WRITE:
+        has_permission = True
+    elif post.public_access == Post.AccessLevel.READ_WRITE:
+        has_permission = True
+        
+    if not has_permission:
+        return Response({'error': 'You do not have permission to delete this post'}, status=status.HTTP_403_FORBIDDEN)
+        
+    post.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
+>>>>>>> Stashed changes
